@@ -394,6 +394,19 @@ input[type="range"]::-moz-range-thumb {
 }
 .bubble:hover .play-hint { opacity: .9; transform: scale(1.2); }
 
+/* Listening practice: hide the dialogue text, show only speaker + ellipsis */
+.bubble .ellipsis { display: none; }
+.dialogue.text-hidden .dialog-text { display: none; }
+.dialogue.text-hidden .bubble .ellipsis {
+  display: inline;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #b9b3cc;
+  letter-spacing: 3px;
+}
+.dialogue.text-hidden .bubble .en { display: none !important; }
+.dialogue.text-hidden .bubble { min-width: 130px; }
+
 .next-row { text-align: center; margin: 26px 0; }
 
 /* ── Quiz ───────────────────────────────────────────────────────────────── */

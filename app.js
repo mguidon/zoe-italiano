@@ -166,10 +166,29 @@ function openTopic(topic) {
   currentTopic = topic;
   $("#conv-title").textContent = `${topic.emoji} ${topic.title}`;
   $("#quiz-btn").classList.add("hidden");
+  $("#show-text").checked = false;
   renderDialogue(topic);
+  applyTextVisibility();
   show("conversation");
   if (!voiceFemale) showVoiceWarning();
 }
+
+// Show/hide the dialogue text (listening practice) and the translation toggle.
+function applyTextVisibility() {
+  const showText = $("#show-text").checked;
+  document.querySelectorAll(".dialogue").forEach((d) =>
+    d.classList.toggle("text-hidden", !showText)
+  );
+  $("#translation-row").classList.toggle("hidden", !showText);
+  if (!showText) {
+    $("#show-translation").checked = false;
+    document.querySelectorAll(".bubble .en").forEach((el) => el.classList.add("hidden"));
+  } else if ($("#show-translation").checked) {
+    document.querySelectorAll(".bubble .en").forEach((el) => el.classList.remove("hidden"));
+  }
+}
+
+$("#show-text").addEventListener("change", applyTextVisibility);
 
 function renderDialogue(topic) {
   const box = $("#dialogue");
@@ -183,7 +202,7 @@ function renderDialogue(topic) {
     bubble.dataset.index = i;
     bubble.innerHTML = `
       <div class="speaker" style="color:${spk.color}">${spk.label}</div>
-      <div class="it"><span class="play-hint">🔊</span>${line.it}</div>
+      <div class="it"><span class="play-hint">🔊</span><span class="dialog-text">${line.it}</span><span class="ellipsis">…</span></div>
       <div class="en hidden">${line.en}</div>`;
     bubble.addEventListener("click", async () => {
       stopSpeaking();
