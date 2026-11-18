@@ -16,7 +16,6 @@ const screens = {
 let currentTopic = null;
 let voiceFemale = null;
 let voiceMale = null;
-let speakingIndex = -1;
 let utteranceToken = 0; // invalidates queued speech when stopping
 
 // ─── Voice selection ───────────────────────────────────────────────────────
@@ -128,7 +127,6 @@ function stopSpeaking() {
 
 function clearSpeakingHighlight() {
   document.querySelectorAll(".bubble.speaking").forEach((b) => b.classList.remove("speaking"));
-  speakingIndex = -1;
 }
 
 function rate() { return parseFloat($("#speed").value); }
@@ -224,7 +222,6 @@ function highlight(i) {
   clearSpeakingHighlight();
   const b = document.querySelector(`.bubble[data-index='${i}']`);
   if (b) { b.classList.add("speaking"); b.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
-  speakingIndex = i;
 }
 
 $("#play-all-btn").addEventListener("click", async () => {
