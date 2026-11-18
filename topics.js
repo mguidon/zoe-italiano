@@ -105,7 +105,7 @@ const TOPICS = [
       { it: "il panino", de: "das Pausenbrot", emo: "🥪" },
       { it: "la mela", de: "der Apfel", emo: "🍎" },
       { it: "il succo di frutta", de: "der Saft", emo: "🧃" },
-      { it: "il temperino", de: "der Anspitzer", emo: "🔪" },
+      { it: "il temperino", de: "der Anspitzer", emo: "�" },
       { it: "la merenda", de: "die Brotzeit", emo: "🍪" },
       { it: "la campanella", de: "die Schulglocke", emo: "🔔" },
     ],
