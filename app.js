@@ -8,6 +8,8 @@ const $ = (sel) => document.querySelector(sel);
 const screens = {
   topics: $("#topic-screen"),
   conversation: $("#conversation-screen"),
+  words: $("#word-screen"),
+  vocab: $("#vocab-screen"),
   quiz: $("#quiz-screen"),
 };
 
@@ -140,6 +142,8 @@ function show(name) {
 
 $("#back-btn").addEventListener("click", () => { stopSpeaking(); show("topics"); });
 $("#back-to-conv-btn").addEventListener("click", () => show("conversation"));
+$("#back-to-conv-btn2").addEventListener("click", () => { stopSpeaking(); show("conversation"); });
+$("#back-to-words-btn").addEventListener("click", () => { stopSpeaking(); show("words"); });
 
 // ─── Topic screen ──────────────────────────────────────────────────────────
 
@@ -166,6 +170,7 @@ function openTopic(topic) {
   currentTopic = topic;
   $("#conv-title").textContent = `${topic.emoji} ${topic.title}`;
   $("#quiz-btn").classList.add("hidden");
+  $("#words-btn").classList.remove("hidden");
   $("#show-text").checked = false;
   renderDialogue(topic);
   applyTextVisibility();
@@ -367,6 +372,182 @@ function launchConfetti(count) {
     layer.appendChild(c);
     setTimeout(() => c.remove(), 6000);
   }
+}
+
+// ─── Vocabulary: word list ─────────────────────────────────────────────────
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+$("#words-btn").addEventListener("click", () => {
+  stopSpeaking();
+  $("#word-title").textContent = `📚 ${currentTopic.title} – Wörter`;
+  renderWordList();
+  show("words");
+});
+
+function renderWordList() {
+  const box = $("#word-list");
+  box.innerHTML = "";
+  const showDe = $("#show-de").checked;
+  for (const w of currentTopic.words) {
+    const card = document.createElement("div");
+    card.className = "word-card";
+    card.innerHTML = `
+      <div class="wemoji">${w.emo}</div>
+      <div class="w-it">${w.it} <span class="w-play">🔊</span></div>
+      <div class="w-de ${showDe ? "" : "hidden"}">${w.de}</div>`;
+    card.addEventListener("click", async () => {
+      card.classList.add("speaking-word");
+      await speak(w.it, rate(), "f");
+      card.classList.remove("speaking-word");
+    });
+    box.appendChild(card);
+  }
+}
+
+$("#show-de").addEventListener("change", () => {
+  document.querySelectorAll(".word-card .w-de").forEach((el) =>
+    el.classList.toggle("hidden", !$("#show-de").checked)
+  );
+});
+
+// ─── Vocabulary quiz ───────────────────────────────────────────────────────
+
+let vocabQuestions = [];
+let vocabIndex = 0;
+let vocabResults = [];
+
+$("#vocab-quiz-btn").addEventListener("click", () => {
+  startVocabQuiz();
+  show("vocab");
+});
+
+function buildVocabQuestions() {
+  const picked = shuffle(currentTopic.words).slice(0, Math.min(8, currentTopic.words.length));
+  return picked.map((w, i) => {
+    const others = shuffle(currentTopic.words.filter((x) => x.it !== w.it)).slice(0, 3);
+    if (i % 2 === 0) {
+      // listening: hear the Italian word, pick it among Italian options
+      const options = shuffle([w, ...others]).map((x) => x.it);
+      return { type: "listen", word: w, options, a: options.indexOf(w.it) };
+    }
+    // meaning: read the Italian word, pick the German meaning
+    const options = shuffle([w, ...others]).map((x) => x.de);
+    return { type: "meaning", word: w, options, a: options.indexOf(w.de) };
+  });
+}
+
+function startVocabQuiz() {
+  vocabQuestions = buildVocabQuestions();
+  vocabIndex = 0;
+  vocabResults = [];
+  $("#vocab-title").textContent = `📖 ${currentTopic.title} – Wort-Quiz`;
+  $("#vocab-result").classList.add("hidden");
+  renderVocabQuestion();
+}
+
+function renderVocabProgress(box, results, index) {
+  box.innerHTML = "";
+  vocabQuestions.forEach((_, i) => {
+    const dot = document.createElement("div");
+    dot.className = "dot";
+    if (i < results.length) dot.classList.add(results[i] ? "good" : "bad");
+    else if (i === index) dot.classList.add("current");
+    box.appendChild(dot);
+  });
+}
+
+function renderVocabQuestion() {
+  renderVocabProgress($("#vocab-progress"), vocabResults, vocabIndex);
+  const card = $("#vocab-card");
+  card.classList.remove("hidden");
+  const q = vocabQuestions[vocabIndex];
+
+  const head = q.type === "listen"
+    ? `<h3>Frage ${vocabIndex + 1} / ${vocabQuestions.length}</h3>
+       <p style="font-size:1.2rem">👂 Welches Wort hörst du?</p>
+       <button class="big-btn secondary replay-btn" style="margin-bottom:6px">🔊 Nochmal hören</button>`
+    : `<h3>Frage ${vocabIndex + 1} / ${vocabQuestions.length}</h3>
+       <p style="font-size:1.2rem">Was bedeutet „${q.word.it}“?<br>
+       <span style="font-size:.9rem;color:#888;font-style:italic">Wie heißt das auf Deutsch?</span></p>`;
+
+  card.innerHTML = `${head}
+    <div class="quiz-options"></div>
+    <div class="quiz-feedback"></div>
+    <div class="quiz-nav"></div>`;
+
+  const optBox = card.querySelector(".quiz-options");
+  const feedback = card.querySelector(".quiz-feedback");
+  const nav = card.querySelector(".quiz-nav");
+
+  const play = () => speak(q.word.it, rate(), "f");
+  if (q.type === "listen") {
+    card.querySelector(".replay-btn").addEventListener("click", (e) => { e.stopPropagation(); play(); });
+    play();
+  }
+
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "quiz-option";
+    btn.textContent = opt;
+    btn.addEventListener("click", async () => {
+      stopSpeaking();
+      const correct = i === q.a;
+      vocabResults[vocabIndex] = correct;
+      optBox.querySelectorAll(".quiz-option").forEach((b, bi) => {
+        b.disabled = true;
+        if (bi === q.a) b.classList.add("correct");
+        else if (bi === i) b.classList.add("wrong");
+      });
+      feedback.textContent = correct ? "✅ Richtig! Brava!" : `❌ Die richtige Antwort ist: „${q.options[q.a]}“`;
+      feedback.style.color = correct ? "#2e7d32" : "#c62828";
+      renderVocabProgress($("#vocab-progress"), vocabResults, vocabIndex);
+      await play();
+
+      const next = document.createElement("button");
+      next.className = "big-btn";
+      next.textContent = vocabIndex === vocabQuestions.length - 1 ? "🏁 Ergebnis" : "Weiter →";
+      next.addEventListener("click", () => {
+        if (vocabIndex === vocabQuestions.length - 1) showVocabResult();
+        else { vocabIndex++; renderVocabQuestion(); }
+      });
+      nav.appendChild(next);
+      next.focus();
+    });
+    optBox.appendChild(btn);
+  });
+}
+
+function showVocabResult() {
+  $("#vocab-card").classList.add("hidden");
+  renderVocabProgress($("#vocab-progress"), vocabResults, vocabQuestions.length);
+  const correct = vocabResults.filter(Boolean).length;
+  const total = vocabQuestions.length;
+  const box = $("#vocab-result");
+  let msg, msgDe, stars;
+  if (correct === total) { msg = "Fantastico! Tutti giusti! 🎉"; msgDe = "Fantastisch! Alle richtig! 🎉"; stars = "⭐⭐⭐"; }
+  else if (correct >= total * 0.7) { msg = "Bravissima! 🏆"; msgDe = "Super gemacht! 🏆"; stars = "⭐⭐"; }
+  else { msg = "Ripassa le parole e riprova! 💪"; msgDe = "Lern die Wörter noch mal und versuch es erneut! 💪"; stars = "⭐"; }
+  box.innerHTML = `
+    <div class="score">${correct} / ${total}</div>
+    <div>${stars}</div>
+    <p>${msg}</p>
+    <p style="color:#777">${msgDe}</p>
+    <button class="big-btn" id="vocab-retry-btn">🔁 Nochmal</button>
+    <button class="big-btn secondary" id="vocab-words-btn">📚 Zu den Wörtern</button>`;
+  box.classList.remove("hidden");
+  $("#vocab-retry-btn").addEventListener("click", startVocabQuiz);
+  $("#vocab-words-btn").addEventListener("click", () => show("words"));
+  speak(msg.replace(/🎉|🏆|💪/g, ""), rate(), "f");
+  if (correct === total) launchConfetti(60);
+  else if (correct >= total * 0.7) launchConfetti(25);
 }
 
 // ─── Init ──────────────────────────────────────────────────────────────────

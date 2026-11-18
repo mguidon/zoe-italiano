@@ -58,8 +58,34 @@
       <div id="dialogue" class="dialogue"></div>
 
       <div class="next-row">
+        <button id="words-btn" class="big-btn go2 hidden">📚 Wörter lernen</button>
         <button id="quiz-btn" class="big-btn go hidden">📝 Zum Quiz!</button>
       </div>
+    </section>
+
+    <!-- Step 2b: vocabulary list -->
+    <section id="word-screen" class="hidden">
+      <button id="back-to-conv-btn2" class="back-btn">← Gespräch</button>
+      <h2 id="word-title"></h2>
+      <div class="card controls">
+        <p style="margin:0">🔊 Klicke auf ein Wort, um es zu hören!</p>
+        <div class="toggle-row">
+          <label><input type="checkbox" id="show-de" /> Zeige Bedeutung</label>
+        </div>
+      </div>
+      <div id="word-list" class="word-grid"></div>
+      <div class="next-row">
+        <button id="vocab-quiz-btn" class="big-btn go">📖 Wort-Quiz!</button>
+      </div>
+    </section>
+
+    <!-- Step 2c: vocabulary quiz -->
+    <section id="vocab-screen" class="hidden">
+      <button id="back-to-words-btn" class="back-btn">← Wörter</button>
+      <h2 id="vocab-title"></h2>
+      <div id="vocab-progress" class="quiz-progress"></div>
+      <div id="vocab-card" class="card quiz-card"></div>
+      <div id="vocab-result" class="card quiz-result hidden"></div>
     </section>
 
     <!-- Step 3: quiz -->
